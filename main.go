@@ -5,6 +5,10 @@ import (
 	"plugin"
 )
 
+type Greeter interface {
+	Greet()
+}
+
 func main() {
 	fmt.Println("plug start")
 	p, err := plugin.Open("plugin/plugin.so")
@@ -12,10 +16,15 @@ func main() {
 		fmt.Println("err:", err)
 	}
 	fmt.Println(p)
-	m, err := p.Lookup("Demo")
+	m, err := p.Lookup("Greeter")
 	if err != nil {
 		fmt.Println("err:", err)
 	}
-	res := m.(func(int) int)(30)
-	fmt.Println(res)
+	greeter, ok := m.(Greeter)
+	if !ok {
+		fmt.Println("err:", err)
+	}
+	greeter.Greet()
+	// res := m.(func(int) int)(30)
+	// fmt.Println(res)
 }
