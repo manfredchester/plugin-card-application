@@ -6,7 +6,11 @@ import (
 	"plugin"
 )
 
+<<<<<<< HEAD
 type Greeters interface {
+=======
+type Greeter interface {
+>>>>>>> 0476bd76ddca860cd592ed3dd73f204e3295a147
 	Greet()
 }
 
@@ -41,10 +45,15 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(p)
+<<<<<<< HEAD
 	v, err := p.Lookup("V")
+=======
+	m, err := p.Lookup("Greeter")
+>>>>>>> 0476bd76ddca860cd592ed3dd73f204e3295a147
 	if err != nil {
 		panic(err)
 	}
+<<<<<<< HEAD
 	f, err := p.Lookup("F")
 	if err != nil {
 		panic(err)
@@ -62,6 +71,13 @@ func main() {
 	// if err != nil {
 	// 	fmt.Println("err:", err)
 	// }
+=======
+	greeter, ok := m.(Greeter)
+	if !ok {
+		fmt.Println("err:", err)
+	}
+	greeter.Greet()
+>>>>>>> 0476bd76ddca860cd592ed3dd73f204e3295a147
 	// res := m.(func(int) int)(30)
 	// fmt.Println(res)
 }
