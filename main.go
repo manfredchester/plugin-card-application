@@ -13,21 +13,20 @@ type Greeter interface {
 func main() {
 	fmt.Println("echo ./plugin/greet.so")
 	// 3. 查找并实例化插件
-	plug, err := plugin.Open("./plugin/greet.so")
+	plug1, err := plugin.Open("./plugin/greet.so")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
+	fmt.Println(plug1)
 	// 4. 找到插件导出的接口实例，其实这个不是必须的
-	symGreeter, err := plug.Lookup("Greeter")
+	symGreeter, err := plug1.Lookup("Greeter")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	// 5. 类型转换
-	var greeter Greeter
 	greeter, ok := symGreeter.(Greeter)
 	if !ok {
 		fmt.Println(err)
@@ -37,7 +36,7 @@ func main() {
 	// 6. 调用方法
 	greeter.Greet()
 
-	fmt.Println("echo ./plugin/plugin_name.so")
+	fmt.Println("====================================================\necho ./plugin/plugin_name.so")
 	p, err := plugin.Open("./plugin/plugin_name.so")
 	if err != nil {
 		panic(err)
@@ -60,7 +59,7 @@ func main() {
 		fmt.Println("err:", err)
 	}
 	fmt.Println(plugs)
-	m, err := p.Lookup("Demo")
+	m, err := plugs.Lookup("Demo")
 	if err != nil {
 		fmt.Println("err:", err)
 	}
