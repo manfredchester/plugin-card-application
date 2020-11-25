@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"plugin"
 )
 
@@ -12,6 +14,19 @@ type Greeter interface {
 }
 
 func main() {
+	l, err := newLoader()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(l.getplugins())
+	// ch:= make(chan,0)
+	// for _, name := range l.getplugins() {
+	// 	if err := l.compileAndRun(name); err != nil {
+	// 		fmt.Fprintf(os.Stderr, "%v", err)
+	// 	}
+	// }
+	// ch<-
+	return
 	fmt.Println("**************start**********************")
 	fmt.Println("==========================\necho ./plugin/greet.so")
 	// 3. 查找并实例化插件
@@ -76,4 +91,70 @@ func main() {
 	fmt.Println(m)
 	res := m.(func(int) int)(30)
 	fmt.Println(res)
+	fmt.Println("**************end**********************")
+
+}
+
+type loader struct {
+	pluginDir string
+	objectDir string
+}
+
+func (l *loader) compileAndRun() {
+	// obj,err:=l.compile()
+}
+
+func (l *loader) compile(name string) (string, error) {
+	f, err := ioutil.ReadFile(filepath.Join(l.pluginDir, name))
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+}
+
+func (l *loader) run() {
+
+}
+
+func newLoader() (*loader, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	pDir := filepath.Join(wd, "plugin")
+
+	tmp, err := ioutil.TempDir("", "")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return &loader{
+		pluginDir: pDir,
+		objectDir: tmp,
+	}, nil
+
+}
+
+func (l *loader) getplugins() []string {
+	dir, err := os.Open(l.pluginDir)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer dir.Close()
+
+	names, err := dir.Readdirnames(-1)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	var res []string
+	for _, name := range names {
+		if filepath.Ext(name) == ".go" {
+			res = append(res, name)
+		}
+	}
+	return res
 }
