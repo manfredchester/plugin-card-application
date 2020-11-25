@@ -8,10 +8,11 @@ import (
 
 type Greeter interface {
 	Greet()
-	Greet1s()
+	// Greet1s()
 }
 
 func main() {
+	fmt.Println("**************start**********************")
 	fmt.Println("==========================\necho ./plugin/greet.so")
 	// 3. 查找并实例化插件
 	plug1, err := plugin.Open("./plugin/greet.so")
@@ -36,7 +37,7 @@ func main() {
 
 	// 6. 调用方法
 	greeter.Greet()
-	greeter.Greet1s()
+	// greeter.Greet1s()
 
 	fmt.Println("====================================================\necho ./plugin/plugin_name.so")
 	p, err := plugin.Open("./plugin/plugin_name.so")
@@ -60,7 +61,7 @@ func main() {
 	f.(func())()
 	// prints "Hello, number 7"
 
-	fmt.Println("./plugin/plugin.so")
+	fmt.Println("====================\n./plugin/plugin.so")
 	plugs, err := plugin.Open("./plugin/plugin.so")
 	if err != nil {
 		fmt.Println("err:", err)
