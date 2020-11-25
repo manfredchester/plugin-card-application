@@ -1,9 +1,7 @@
 package main
 
-type greeting string
+type Greeter string
 
-func (g greeting) Greet() {
+func (g Greeter) Greet() {
 	println("hello world")
 }
-
-var Greeter greeting
