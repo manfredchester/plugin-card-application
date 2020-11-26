@@ -103,17 +103,20 @@ type loader struct {
 func newLoader() *loader {
 	defer func() {
 		if e := recover(); e != nil {
-			fmt.Errorf("%v", e)
+			fmt.Println(fmt.Errorf("%v", e))
 			return
 		}
 	}()
 	wd, err := os.Getwd()
 	asset(err)
+	fmt.Println("wd:", wd)
 
 	pDir := filepath.Join(wd, "plugin")
+	fmt.Println("pDir:", pDir)
 
-	tmp, err := ioutil.TempDir("", "")
+	tmp, err := ioutil.TempDir("/tmp/zhxu", "")
 	asset(err)
+	fmt.Println("tmp:", tmp)
 
 	return &loader{
 		pluginDir: pDir,
@@ -161,17 +164,19 @@ func (l *loader) run(object string) error {
 	if err != nil {
 		return fmt.Errorf("could not open %s: %v", object, err)
 	}
-	run, err := p.Lookup("run")
+	run, err := p.Lookup("Demo")
 	if err != nil {
 		return fmt.Errorf("could not find Run function: %v", err)
 	}
-	runFunc, ok := run.(func() error)
-	if !ok {
-		return fmt.Errorf("found Run but type is %T instead of func() error", run)
-	}
-	if err := runFunc(); err != nil {
-		return fmt.Errorf("plugin failed with error %v", err)
-	}
+	// runFunc, ok := run.(func() error)
+	res := run.(func(int) int)(30)
+	fmt.Println(res)
+	// if !ok {
+	// 	return fmt.Errorf("found Run but type is %T instead of func() error", run)
+	// }
+	// if err := runFunc(); err != nil {
+	// 	return fmt.Errorf("plugin failed with error %v", err)
+	// }
 	return nil
 
 }
