@@ -7,3 +7,7 @@ func (g greeter) Greet() {
 }
 
 var Greeter greeter
+
+func run() {
+	println("greet.go")
+}

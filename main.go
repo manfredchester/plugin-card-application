@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"plugin"
 )
@@ -14,19 +16,18 @@ type Greeter interface {
 }
 
 func main() {
-	l, err := newLoader()
-	if err != nil {
-		fmt.Println(err)
+	l := newLoader()
+	if l == nil {
+		return
 	}
 	fmt.Println(l.getplugins())
-	// ch:= make(chan,0)
-	// for _, name := range l.getplugins() {
-	// 	if err := l.compileAndRun(name); err != nil {
-	// 		fmt.Fprintf(os.Stderr, "%v", err)
-	// 	}
-	// }
-	// ch<-
-	return
+	ch := make(chan int, 0)
+	for _, name := range l.getplugins() {
+		if err := l.compileAndRun(name); err != nil {
+			fmt.Fprintf(os.Stderr, "%v", err)
+		}
+	}
+	<-ch
 	fmt.Println("**************start**********************")
 	fmt.Println("==========================\necho ./plugin/greet.so")
 	// 3. 查找并实例化插件
@@ -92,7 +93,6 @@ func main() {
 	res := m.(func(int) int)(30)
 	fmt.Println(res)
 	fmt.Println("**************end**********************")
-
 }
 
 type loader struct {
@@ -100,8 +100,38 @@ type loader struct {
 	objectDir string
 }
 
-func (l *loader) compileAndRun() {
-	// obj,err:=l.compile()
+func newLoader() *loader {
+	defer func() {
+		if e := recover(); e != nil {
+			fmt.Errorf("%v", e)
+			return
+		}
+	}()
+	wd, err := os.Getwd()
+	asset(err)
+
+	pDir := filepath.Join(wd, "plugin")
+
+	tmp, err := ioutil.TempDir("", "")
+	asset(err)
+
+	return &loader{
+		pluginDir: pDir,
+		objectDir: tmp,
+	}
+}
+
+func (l *loader) compileAndRun(name string) error {
+	obj, err := l.compile(name)
+	if err != nil {
+		return fmt.Errorf("could not compile %s: %v", name, err)
+	}
+	// defer os.Remove(obj)
+
+	if err := l.run(obj); err != nil {
+		return fmt.Errorf("could not run %s: %v", obj, err)
+	}
+	return nil
 }
 
 func (l *loader) compile(name string) (string, error) {
@@ -110,30 +140,39 @@ func (l *loader) compile(name string) (string, error) {
 		fmt.Println(err)
 		return "", err
 	}
+	srcPath := filepath.Join(l.objectDir, fmt.Sprintf("%d.go", rand.Int()))
+	if err := ioutil.WriteFile(srcPath, f, 0666); err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	objectPath := srcPath[:len(srcPath)-3] + ".so"
+	cmd := exec.Command("go", "build", "-buildmode=plugin", "-o="+objectPath, srcPath)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("could not compile %s: %v", name, err)
+	}
 
+	return objectPath, nil
 }
 
-func (l *loader) run() {
-
-}
-
-func newLoader() (*loader, error) {
-	wd, err := os.Getwd()
+func (l *loader) run(object string) error {
+	p, err := plugin.Open(object)
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		return fmt.Errorf("could not open %s: %v", object, err)
 	}
-	pDir := filepath.Join(wd, "plugin")
-
-	tmp, err := ioutil.TempDir("", "")
+	run, err := p.Lookup("run")
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		return fmt.Errorf("could not find Run function: %v", err)
 	}
-	return &loader{
-		pluginDir: pDir,
-		objectDir: tmp,
-	}, nil
+	runFunc, ok := run.(func() error)
+	if !ok {
+		return fmt.Errorf("found Run but type is %T instead of func() error", run)
+	}
+	if err := runFunc(); err != nil {
+		return fmt.Errorf("plugin failed with error %v", err)
+	}
+	return nil
 
 }
 
@@ -157,4 +196,14 @@ func (l *loader) getplugins() []string {
 		}
 	}
 	return res
+}
+
+// func (l *loader) abandon() {
+// 	os.RemoveAll(l.pluginDir)
+// }
+
+func asset(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
